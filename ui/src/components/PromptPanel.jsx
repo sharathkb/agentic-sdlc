@@ -39,7 +39,10 @@ export default function PromptPanel({ onRun, onStop, running }) {
   const [requirement, setRequirement] = useState('')
   const [mock, setMock] = useState(false)
 
-  const hasKey = Boolean(localStorage.getItem('anthropic_api_key'))
+  const provider = localStorage.getItem('provider') || 'anthropic'
+  const keyMap   = { anthropic: 'anthropic_api_key', groq: 'groq_api_key', gemini: 'gemini_api_key', openai: 'openai_api_key', ollama: null, custom: 'custom_api_key' }
+  const keyName  = keyMap[provider]
+  const hasKey   = keyName === null || Boolean(localStorage.getItem(keyName))
   const canRun = requirement.trim().length > 0
 
   const loadScenario = (scenario) => {
