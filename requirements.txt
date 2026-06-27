@@ -2,9 +2,13 @@
 pydantic>=2.6
 pydantic-settings>=2.2
 
-# Live mode only (real Anthropic API calls).
+# Live mode — Anthropic (Claude).
 # Omit if you only need mock mode. Install with: pip install -e ".[live]"
 anthropic>=0.40
+
+# Live mode — OpenAI-compatible providers (OpenAI, Groq, Google Gemini, Ollama, custom).
+# Install with: pip install -e ".[compat]"   or just: pip install openai
+openai>=1.0
 
 # Required for:
 #   - server.py       (Web UI backend — FastAPI + uvicorn)

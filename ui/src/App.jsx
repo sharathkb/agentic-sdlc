@@ -17,7 +17,21 @@ export default function App() {
     setRunStatus(null)
     setRunning(true)
 
-    const apiKey = localStorage.getItem('anthropic_api_key') || ''
+    // Read active provider settings from localStorage
+    const provider  = localStorage.getItem('provider') || 'anthropic'
+    const keyMap    = {
+      anthropic: 'anthropic_api_key',
+      groq:      'groq_api_key',
+      gemini:    'gemini_api_key',
+      openai:    'openai_api_key',
+      ollama:    null,
+      custom:    'custom_api_key',
+    }
+    const keyName  = keyMap[provider] || 'anthropic_api_key'
+    const apiKey   = keyName ? (localStorage.getItem(keyName) || '') : ''
+    const model    = localStorage.getItem(`${provider}_model`) || undefined
+    const baseUrl  = provider === 'custom' ? (localStorage.getItem('custom_base_url') || undefined) : undefined
+
     const controller = new AbortController()
     abortRef.current = controller
 
@@ -28,7 +42,14 @@ export default function App() {
           'Content-Type': 'application/json',
           ...(apiKey ? { 'x-api-key': apiKey } : {}),
         },
-        body: JSON.stringify({ requirement, mock, api_key: apiKey || undefined }),
+        body: JSON.stringify({
+          requirement,
+          mock,
+          provider,
+          api_key:  apiKey || undefined,
+          model:    model  || undefined,
+          base_url: baseUrl,
+        }),
         signal: controller.signal,
       })
 

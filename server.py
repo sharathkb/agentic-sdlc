@@ -58,15 +58,35 @@ class _SSEHandler(logging.Handler):
         })
 
 
+# Base URLs for each supported OpenAI-compatible provider.
+_PROVIDER_BASE_URLS: dict[str, str] = {
+    "openai":  "https://api.openai.com/v1",
+    "groq":    "https://api.groq.com/openai/v1",
+    "gemini":  "https://generativelanguage.googleapis.com/v1beta/openai/",
+    "ollama":  "http://localhost:11434/v1",
+}
+
+# Sensible default models per provider.
+_PROVIDER_DEFAULT_MODELS: dict[str, str] = {
+    "openai":  "gpt-4o-mini",
+    "groq":    "llama-3.3-70b-versatile",
+    "gemini":  "gemini-2.0-flash",
+    "ollama":  "llama3",
+}
+
+
 @app.post("/api/run")
 async def run_pipeline(request: Request):
     body = await request.json()
     requirement: str = body.get("requirement", "").strip()
     mock: bool = bool(body.get("mock", False))
-    # API key can arrive in body or header (header takes priority)
+    provider: str = body.get("provider", "anthropic")
+    # API key — header takes priority over body field.
     api_key: str | None = (
         request.headers.get("x-api-key") or body.get("api_key") or None
     )
+    model: str | None = body.get("model") or None
+    base_url: str | None = body.get("base_url") or None
 
     if not requirement:
         return JSONResponse(status_code=400, content={"error": "requirement is required"})
@@ -78,10 +98,30 @@ async def run_pipeline(request: Request):
         tid_holder.append(threading.get_ident())
 
         settings = Settings()
-        if api_key:
-            settings.anthropic_api_key = api_key
         if mock:
             settings.force_mock = True
+        elif api_key:
+            if provider == "anthropic":
+                settings.anthropic_api_key = api_key
+                if model:
+                    settings.model = model
+            else:
+                # OpenAI-compatible provider (openai / groq / gemini / ollama / custom)
+                settings.openai_api_key = api_key if provider != "ollama" else "ollama"
+                settings.openai_base_url = (
+                    base_url
+                    or _PROVIDER_BASE_URLS.get(provider, "https://api.openai.com/v1")
+                )
+                settings.openai_model = (
+                    model or _PROVIDER_DEFAULT_MODELS.get(provider, "gpt-4o-mini")
+                )
+        elif provider == "ollama":
+            # Ollama doesn't need an API key
+            settings.openai_api_key = "ollama"
+            settings.openai_base_url = base_url or _PROVIDER_BASE_URLS["ollama"]
+            settings.openai_model = model or _PROVIDER_DEFAULT_MODELS["ollama"]
+
+        configure_logging(settings.log_level, settings.log_json)
 
         configure_logging(settings.log_level, settings.log_json)
 
