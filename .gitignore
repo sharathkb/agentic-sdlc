@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+agentic-sdlc.code-workspace
+output/
+*.db
+.pytest_cache/
+*.egg-info/
+dist/
+build/
