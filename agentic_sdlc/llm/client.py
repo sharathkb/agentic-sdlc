@@ -49,6 +49,71 @@ class LLMClient(Protocol):
         ...
 
 
+class OpenAICompatibleLLMClient:
+    """Client for any OpenAI-compatible API: OpenAI, Groq, Google Gemini, Ollama, etc.
+
+    All of these providers expose the same ``/chat/completions`` endpoint so one
+    implementation covers all of them — only ``api_key`` and ``base_url`` differ.
+    """
+
+    def __init__(
+        self,
+        api_key: str,
+        base_url: str,
+        default_model: str,
+        default_max_tokens: int,
+        max_retries: int = 2,
+        base_delay: float = 1.0,
+        timeout: float = 120.0,
+    ) -> None:
+        try:
+            from openai import OpenAI
+        except ImportError as exc:
+            raise LLMError(
+                "The 'openai' package is required for this provider. "
+                "Install it: pip install openai"
+            ) from exc
+
+        self._client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
+        self._default_model = default_model
+        self._default_max_tokens = default_max_tokens
+        self._max_retries = max_retries
+        self._base_delay = base_delay
+
+    def complete(
+        self,
+        *,
+        system: str,
+        user: str,
+        tag: str,
+        model: str | None = None,
+        max_tokens: int | None = None,
+    ) -> str:
+        model = model or self._default_model
+        max_tokens = max_tokens or self._default_max_tokens
+        attempt = 0
+        while True:
+            attempt += 1
+            try:
+                resp = self._client.chat.completions.create(
+                    model=model,
+                    max_tokens=max_tokens,
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user},
+                    ],
+                )
+                return resp.choices[0].message.content or ""
+            except Exception as exc:  # noqa: BLE001
+                if attempt > self._max_retries:
+                    raise LLMError(f"[{tag}] model call failed: {exc}") from exc
+                delay = self._base_delay * (2 ** (attempt - 1))
+                delay += random.uniform(0, delay * 0.25)
+                log.warning("[%s] transient error (attempt %d), retrying in %.1fs: %s",
+                            tag, attempt, delay, exc)
+                time.sleep(delay)
+
+
 class AnthropicLLMClient:
     """Production client wrapping the official ``anthropic`` SDK."""
 

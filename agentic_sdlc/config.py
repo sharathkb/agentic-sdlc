@@ -20,14 +20,19 @@ class Settings(BaseSettings):
     )
 
     # --- LLM backend -------------------------------------------------------
-    # If no API key is present we transparently fall back to the deterministic
-    # MockLLMClient so the whole pipeline is runnable with zero credentials.
+    # If no key is present the system falls back to the deterministic MockLLMClient.
+    # Anthropic backend
     anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
+    model: str = "claude-sonnet-4-6"         # worker model (most steps)
+    planner_model: str = "claude-opus-4-8"   # planner model (architecture, decomposition)
 
-    # Default ("worker") model handles 90%+ of steps cheaply.
-    model: str = "claude-sonnet-4-6"
-    # Heavier model reserved for the hardest reasoning (architecture, decomposition).
-    planner_model: str = "claude-opus-4-8"
+    # OpenAI-compatible backend (OpenAI, Groq, Google Gemini, Ollama, custom, …)
+    # Set OPENAI_API_KEY (or GROQ_API_KEY / GEMINI_API_KEY via server.py mapping)
+    # and OPENAI_BASE_URL to select this backend instead of Anthropic.
+    openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
+    openai_base_url: str = "https://api.openai.com/v1"
+    openai_model: str = "gpt-4o-mini"
+
     max_tokens: int = 8000
     # Force the deterministic offline backend even if a key is set (great for CI).
     force_mock: bool = False
