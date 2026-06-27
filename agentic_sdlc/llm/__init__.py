@@ -37,6 +37,9 @@ def build_llm(settings: Settings) -> LLMClient:
         )
 
     # OpenAI-compatible provider (Groq, Gemini, Ollama, OpenAI, custom …)
+    # Override the Anthropic model names so agents don't pass claude-* to Gemini/Groq.
+    settings.model = settings.openai_model
+    settings.planner_model = settings.openai_model
     log.info("Using OpenAICompatibleLLMClient (base_url=%s, model=%s).",
              settings.openai_base_url, settings.openai_model)
     return OpenAICompatibleLLMClient(
