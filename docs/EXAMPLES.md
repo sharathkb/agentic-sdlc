@@ -163,3 +163,137 @@ output/
   PLAN.json                the task DAG as data
   checkpoints/             per-phase serialised WorkflowState (resumable/inspectable)
 ```
+
+---
+
+## Sample output files
+
+### `PLAN.json` — the task DAG as data
+
+```json
+{
+  "tasks": [
+    {
+      "id": "design-architecture",
+      "title": "Design service architecture",
+      "type": "design",
+      "depends_on": [],
+      "produces": []
+    },
+    {
+      "id": "api-contract",
+      "title": "Define API request/response schemas",
+      "type": "schema",
+      "depends_on": ["design-architecture"],
+      "produces": ["app/schemas.py"]
+    },
+    {
+      "id": "persistence",
+      "title": "Implement persistence + code generation",
+      "type": "code",
+      "depends_on": ["design-architecture"],
+      "produces": ["app/config.py", "app/shortener.py", "app/storage.py"]
+    },
+    {
+      "id": "api-endpoints",
+      "title": "Implement FastAPI endpoints",
+      "type": "code",
+      "depends_on": ["api-contract", "persistence"],
+      "produces": ["app/__init__.py", "app/main.py"]
+    },
+    {
+      "id": "tests",
+      "title": "Write integration tests",
+      "type": "test",
+      "depends_on": ["api-endpoints"],
+      "produces": ["tests/test_api.py"]
+    },
+    {
+      "id": "docs",
+      "title": "Author docs and dependency manifest",
+      "type": "docs",
+      "depends_on": ["api-endpoints"],
+      "produces": ["README.md", "requirements.txt"]
+    },
+    {
+      "id": "review",
+      "title": "Final review gate",
+      "type": "review",
+      "depends_on": ["tests", "docs"],
+      "produces": []
+    }
+  ]
+}
+```
+
+Note: `api-endpoints` lists both `api-contract` and `persistence` in
+`depends_on`. That is the join node — the orchestrator will not start this task
+until *both* parallel tasks finish.
+
+---
+
+### `ENGINEERING_SUMMARY.md` — the human-readable run report (excerpt)
+
+```markdown
+# Engineering Summary — Scalable URL Shortener Service
+
+- **Run id**: `3dd8f4eae947`
+- **Requirement kind**: greenfield
+
+## 1. Requirement & Rationale
+Build a service that turns long URLs into short codes, persists the mapping,
+redirects on lookup, and reports click analytics.
+
+**Goals**: Create short codes for arbitrary http/https URLs; Redirect short
+codes to their target; Expose click analytics per code; Persist mappings durably
+**Non-goals**: User accounts/auth (out of scope v1); Custom domains
+
+## 4. Implementation Plan
+- **design-architecture** [design] (succeeded) — depends on: —
+- **api-contract**        [schema] (succeeded) — depends on: design-architecture
+- **persistence**         [code]   (succeeded) — depends on: design-architecture
+- **api-endpoints**       [code]   (succeeded) — depends on: api-contract, persistence
+- **tests**               [test]   (succeeded) — depends on: api-endpoints
+- **docs**                [docs]   (succeeded) — depends on: api-endpoints
+- **review**              [review] (succeeded) — depends on: tests, docs
+
+Execution levels: [['design-architecture'], ['api-contract', 'persistence'],
+                   ['api-endpoints'], ['docs', 'tests'], ['review']]
+
+## 6. Validation & Risk
+- **Tests passed**: True
+- **Max risk**: medium
+  - [medium] SQLite write contention under high concurrency
+  - [medium] Open-redirect / SSRF via attacker-supplied URLs
+  - [low]    Short-code enumeration leaks link volume
+
+## 7. Approvals (Controlled Autonomy)
+- `post-understanding`: auto_approved — Auto-approved (risk=low < high).
+- `pre-finalize`:       auto_approved — Auto-approved (risk=medium < high).
+```
+
+---
+
+### `VALIDATION.md` — risks, trade-offs, real pytest output (excerpt)
+
+```markdown
+# Validation Report
+
+**Tests passed:** True
+
+## Risks
+- **[medium]** SQLite write contention under high concurrency
+  - Mitigation: Move to Postgres; cache reads in Redis.
+- **[medium]** Open-redirect / SSRF via attacker-supplied URLs
+  - Mitigation: Scheme allow-list enforced; add domain denylist.
+
+## Trade-offs
+- SQLite chosen for zero-setup runnability vs. Postgres scalability
+- Sequential base62 codes are compact but enumerable
+
+## Test Execution Output
+```
+......                                                                   [100%]
+============================== 6 passed in 0.34s ==============================
+```
+```

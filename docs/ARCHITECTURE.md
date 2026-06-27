@@ -216,3 +216,33 @@ hitl/approval.py               the approval-gate policy
 guardrails/                    input sanitisation + output secret scanning
 tools/                         SafeWorkspace + subprocess pytest runner
 ```
+
+## 10. Web UI and HTTP server
+
+`server.py` wraps the pipeline in an HTTP API with **Server-Sent Events** for
+real-time log streaming. The React frontend (`ui/`) communicates with it via a
+Vite dev-server proxy.
+
+```
+browser (React + Vite, port 5173)
+  │  POST /api/run            requirement text + mock flag; x-api-key header
+  │  GET  /api/run (SSE)      one JSON event per log line, then a final done/halted event
+  │  GET  /api/artifacts      list of paths under output/
+  │  GET  /api/artifacts/{p}  raw content of one generated file
+  ▼
+server.py  (FastAPI, port 8000)
+  │  spawns Orchestrator in a background thread
+  │  installs a thread-local logging.Handler that converts log records → SSE events
+  │  final event: {"type":"done","artifacts":N,"tests_passed":true} or {"type":"halted",...}
+  ▼
+Orchestrator  (background thread, same process)
+```
+
+Security: the Anthropic API key is passed as an `x-api-key` request header and
+forwarded to `AnthropicLLMClient`; it is never written to disk server-side.
+`localStorage` in the browser is the only persistence for the key.
+
+The Web UI is entirely optional — the core system is a standalone Python package
+(`python -m agentic_sdlc run`) with no dependency on Node.js or `server.py`.
+The UI layer adds convenience (browser-based input, live log stream, built-in
+artifact viewer with syntax highlighting) but does not change any pipeline logic.

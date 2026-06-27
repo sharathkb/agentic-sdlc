@@ -15,11 +15,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Needed only for live (non-mock) runs against the real API.
+# Needed only for live (non-mock) runs against the real Anthropic API.
 live = ["anthropic>=0.40"]
-# Needed to run the *generated* URL-shortener app and its tests.
+# Needed to run server.py (Web UI backend) AND the generated URL-shortener app + its tests.
 app = ["fastapi>=0.110", "uvicorn[standard]>=0.29", "httpx>=0.27"]
-dev = ["pytest>=8.0", "anthropic>=0.40", "fastapi>=0.110", "httpx>=0.27"]
+# Everything: pytest + live SDK + app deps (covers all development scenarios).
+dev = ["pytest>=8.0", "anthropic>=0.40", "fastapi>=0.110", "uvicorn[standard]>=0.29", "httpx>=0.27"]
 
 [project.scripts]
 agentic-sdlc = "agentic_sdlc.cli:main"

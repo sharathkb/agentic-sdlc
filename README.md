@@ -31,6 +31,16 @@ test suite — runs completely offline. Pass `--mock` to force it explicitly.
 
 ## Quickstart
 
+### Prerequisites
+
+| Tool | Minimum | Check |
+|---|---|---|
+| Python | 3.10 | `python --version` |
+| pip | any | `pip --version` |
+| Node.js | 18 (Web UI only) | `node --version` |
+
+**Windows:** if `python` opens the Microsoft Store, open *Settings → App execution aliases* and disable the Python Store alias, then add `C:\Users\<you>\AppData\Local\Programs\Python\Python3xx` to your PATH.
+
 ```bash
 # 1. Install the core system (offline mock mode needs nothing else)
 pip install -e .
@@ -93,10 +103,14 @@ A React + FastAPI UI lets you run any requirement from the browser with real-tim
 log streaming and a built-in artifact viewer.
 
 ```bash
+# 0. Install server dependencies (once)
+pip install -e ".[app]"       # FastAPI + uvicorn for server.py
+pip install -e ".[live]"      # Anthropic SDK — only needed for live (non-mock) runs
+
 # Terminal 1 — backend
 uvicorn server:app --reload --port 8000
 
-# Terminal 2 — frontend (requires Node.js)
+# Terminal 2 — frontend (requires Node.js 18+)
 cd ui && npm install && npm run dev
 ```
 

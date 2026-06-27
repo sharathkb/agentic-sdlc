@@ -112,6 +112,56 @@ body { height: 100vh; overflow: hidden; }
   flex-shrink: 0;
 }
 
+/* Scenario preset buttons */
+.scenario-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.scenario-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+.btn-scenario {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s;
+  line-height: 1.2;
+}
+.btn-scenario:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-scenario:not(:disabled):hover { background: var(--border); }
+
+.btn-scenario-green  { color: var(--green);  border-color: #2d5a40; }
+.btn-scenario-green:not(:disabled):hover  { border-color: var(--green); }
+.btn-scenario-blue   { color: var(--blue);   border-color: #2d4a70; }
+.btn-scenario-blue:not(:disabled):hover   { border-color: var(--blue); }
+.btn-scenario-yellow { color: var(--yellow); border-color: #5a4a2d; }
+.btn-scenario-yellow:not(:disabled):hover { border-color: var(--yellow); }
+
+.scenario-badge {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
 .prompt-panel label {
   display: block;
   font-size: 11px;

@@ -1,5 +1,35 @@
 import { useState } from 'react'
 
+const SCENARIOS = [
+  {
+    id: 'greenfield',
+    label: 'Greenfield',
+    badge: 'full build + tests',
+    color: 'green',
+    text:
+      'Build a scalable URL shortener service with APIs, persistence, and analytics.\n\n' +
+      'It should let clients submit a long URL and receive a short code, redirect short\n' +
+      'codes to their target, and expose analytics on how often each short link is used.',
+  },
+  {
+    id: 'brownfield',
+    label: 'Brownfield',
+    badge: 'halts at risk gate',
+    color: 'blue',
+    text:
+      'Add per-client rate limiting to the existing URL shortener API so that abusive\n' +
+      'clients are throttled. Requests above the configured limit should receive an\n' +
+      'HTTP 429 response. Apply it across all endpoints as middleware.',
+  },
+  {
+    id: 'ambiguous',
+    label: 'Ambiguous',
+    badge: 'halts at understanding gate',
+    color: 'yellow',
+    text: 'Make the app better and faster.',
+  },
+]
+
 const PLACEHOLDER = `Describe what you want to build, e.g.:
 
 Build a REST API for a task manager with user authentication,
@@ -12,20 +42,39 @@ export default function PromptPanel({ onRun, onStop, running }) {
   const hasKey = Boolean(localStorage.getItem('anthropic_api_key'))
   const canRun = requirement.trim().length > 0
 
+  const loadScenario = (scenario) => {
+    setRequirement(scenario.text)
+    setMock(true)
+  }
+
   const handleRun = () => {
     if (!canRun || running) return
     onRun(requirement.trim(), mock)
   }
 
   const handleKeyDown = e => {
-    // Ctrl+Enter or Cmd+Enter to submit
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      handleRun()
-    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleRun()
   }
 
   return (
     <div className="prompt-panel">
+      {/* Scenario presets */}
+      <div className="scenario-row">
+        <span className="scenario-label">Quick scenarios</span>
+        {SCENARIOS.map(s => (
+          <button
+            key={s.id}
+            className={`btn-scenario btn-scenario-${s.color}`}
+            onClick={() => loadScenario(s)}
+            disabled={running}
+            title={s.badge}
+          >
+            {s.label}
+            <span className="scenario-badge">{s.badge}</span>
+          </button>
+        ))}
+      </div>
+
       <label>Requirement</label>
       <textarea
         className="prompt-textarea"

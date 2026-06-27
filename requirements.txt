@@ -2,13 +2,18 @@
 pydantic>=2.6
 pydantic-settings>=2.2
 
-# Live mode only (real Anthropic API). Omit to run fully offline in mock mode.
+# Live mode only (real Anthropic API calls).
+# Omit if you only need mock mode. Install with: pip install -e ".[live]"
 anthropic>=0.40
 
-# Required to run the GENERATED url-shortener app + its tests
+# Required for:
+#   - server.py       (Web UI backend — FastAPI + uvicorn)
+#   - the generated URL-shortener app (output/app/)
+#   - the generated app's integration tests
+# Install with: pip install -e ".[app]"
 fastapi>=0.110
 uvicorn[standard]>=0.29
 httpx>=0.27
 
-# Testing
+# Development / test runner
 pytest>=8.0
