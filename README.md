@@ -54,22 +54,61 @@ To run the **generated** application:
 ```bash
 pip install -e ".[app]"          # fastapi, uvicorn, httpx
 cd output && uvicorn app.main:app --reload
+# GET  http://127.0.0.1:8000/              -> Swagger UI (API docs)
 # POST http://127.0.0.1:8000/api/shorten   {"url": "https://example.com"}
 # GET  http://127.0.0.1:8000/{code}        -> 307 redirect
 # GET  http://127.0.0.1:8000/api/stats/{code}
+# GET  http://127.0.0.1:8000/healthz
 ```
 
-### Live mode (optional, uses the real model)
+### Live mode (any requirement, uses the real model)
 
 ```bash
 pip install -e ".[live]"
-export ANTHROPIC_API_KEY=sk-ant-...
-python -m agentic_sdlc run \
-  "Build a scalable URL shortener service with APIs, persistence, and analytics."
+export ANTHROPIC_API_KEY=sk-ant-...   # Windows: $env:ANTHROPIC_API_KEY="sk-ant-..."
+python -m agentic_sdlc run "Build a REST API for a task manager with auth and SQLite."
 ```
 
 With a key present the system uses `claude-sonnet-4-6` for most steps and
 `claude-opus-4-8` for the hardest reasoning (architecture, decomposition).
+
+### Mock mode limitations
+
+Mock mode uses hardcoded fixtures — it only produces real code for two scenarios:
+
+| Trigger keywords | Scenario | Output |
+|---|---|---|
+| `"url shortener"` or `"shorten"` + `"url"` | Greenfield URL shortener | Full FastAPI app + tests |
+| `"rate limit"`, `"rate-limit"`, `"throttle"` | Brownfield rate limiter | Middleware + unit tests |
+| `"make it better"`, `"enhance"`, etc. | Ambiguous requirement | No code — halts at HITL gate |
+| Anything else | Generic | Bare plan skeleton, no code |
+
+For any other use case a real API key is required.
+
+---
+
+## Web UI
+
+A React + FastAPI UI lets you run any requirement from the browser with real-time
+log streaming and a built-in artifact viewer.
+
+```bash
+# Terminal 1 — backend
+uvicorn server:app --reload --port 8000
+
+# Terminal 2 — frontend (requires Node.js)
+cd ui && npm install && npm run dev
+```
+
+Open **http://localhost:5173**.
+
+**Windows note:** if `npm` is blocked by PowerShell's execution policy, run once:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+The API key is entered in the **⚙ Settings** panel and stored only in the
+browser's `localStorage` — it is never written to disk on the server.
 
 ---
 
@@ -136,6 +175,13 @@ agentic_sdlc/
   hitl/                # human-in-the-loop approval gates
   tools/               # sandboxed filesystem + subprocess test runner
   cli.py               # command-line entry point
+server.py              # FastAPI HTTP server with SSE streaming (for the Web UI)
+ui/                    # React frontend (Vite + highlight.js)
+  src/components/
+    Settings.jsx       # API key input + model selector (stored in localStorage)
+    PromptPanel.jsx    # requirement textarea, mock toggle, run/stop
+    LogStream.jsx      # real-time log stream
+    ArtifactViewer.jsx # generated file browser with syntax highlighting
 docs/                  # architecture, examples, testing
 examples/              # ready-to-run requirement files
 tests/                 # the system's own test suite
@@ -146,5 +192,7 @@ tests/                 # the system's own test suite
 Python 3.10+. The core system depends only on `pydantic` and
 `pydantic-settings`. Optional extras: `live` (the `anthropic` SDK), `app`
 (FastAPI/uvicorn/httpx for the generated service), `dev` (pytest + the above).
+
+The Web UI additionally requires **Node.js 18+** (`npm install` inside `ui/`).
 
 Licensed under the MIT License.
